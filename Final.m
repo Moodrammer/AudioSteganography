@@ -1,5 +1,5 @@
 %% 
-% Audio Steganography Task 
+% Audio Steganography Task 2 
 % 
 % Read and plot the Message audio file (audio1)
 
@@ -25,11 +25,6 @@ message = resample(message, p, q);
 nMessageSamples = length(message);
 messageFftFrequencyScale = (newFs/nMessageSamples) * (0:nMessageSamples - 1);
 messageTimeScale = (1/newFs) * (0:nMessageSamples - 1);
-% plot the message in frequency domain
-plot(messageFftFrequencyScale, abs(fft(message)))
-xlabel("Frequency(Hz)")
-ylabel("message magnitude spectrum")
-title("message magnitude spectrum")
 
 [p, q] = rat(newFs/carrierFs);
 carrier = resample(carrier, p, q);
@@ -37,11 +32,18 @@ carrier = resample(carrier, p, q);
 nCarrierSamples = length(carrier);
 carrierFftFrequencyScale = (newFs/nCarrierSamples) * (0:nCarrierSamples - 1);
 carrierTimeScale = (1/newFs) * (0:nCarrierSamples - 1);
+% plot the message in frequency domain
+figure(2)
+plot(messageFftFrequencyScale, abs(fft(message)))
+xlabel("Frequency(Hz)")
+ylabel("abs(fft(message))")
+title("resampled message magnitude spectrum")
 % plot the carrier in frequency domain
+figure(3)
 plot(carrierFftFrequencyScale, abs(fft(carrier)))
 xlabel("Frequency(Hz)")
-ylabel("carrier magnitude spectrum")
-title("carrier magnitude spectrum")
+ylabel("abs(fft(carrier))")
+title("resampled carrier magnitude spectrum")
 %% 
 % Preparing the parameters to be used for hiding the message into the carrier
 %%
@@ -51,8 +53,8 @@ shiftingFrequency = 22050;
 shiftingCosineMessage = cos(2 * pi * shiftingFrequency * messageTimeScale)';
 %% 
 % Hiding the message into the carrier using the equation to shift the message 
-% frequency band to the higher inaudible frequency components where they don' 
-% t overlap with the carrier frequency components and attenuating them
+% frequency band to the higher inaudible frequency components where they  
+% don't overlap with the carrier frequency components and attenuating them
 %%
 carrierHidden = zeros(1, nCarrierSamples);
 carrierHidden = carrierHidden + carrier';
@@ -64,38 +66,44 @@ audiowrite('hidden.wav', carrierHidden, newFs);
 
 carrierHiddenFft = fft(carrierHidden);
 % plot the magnitude spectrum of the fft of the carrier holding the message 
+figure(4)
 plot(log10(abs(carrierHiddenFft)))
 xlabel("k")
-ylabel("carrierHidden[k]")
+ylabel("log10(abs(carrierHiddenFft))")
 title("carrier + message Magnitude spectrum")
-% plot the magnitude spectrum of the fft with the frequency scale
+% plot the magnitude spectrum of the fft with the frequency scale taking
+% log
+figure(5)
 plot(carrierFftFrequencyScale, (log10(abs(carrierHiddenFft))))
 xlabel("Frequency(Hz)")
-ylabel("log10 magnitude of spectral coefficients")
+ylabel("log10(abs(carrierHiddenFft))")
 title("carrier + message Magnitude spectrum against frequency")
 % plot the magnitude spectrum of the fft with the frequency scale
+figure(6)
 plot(carrierFftFrequencyScale, abs(carrierHiddenFft))
 xlabel("Frequency(Hz)")
-ylabel("magnitude of spectral coefficients")
+ylabel("abs(carrierHiddenFft)")
 title("carrier + message Magnitude spectrum against frequency")
 %% 
 % Retrieving the hidden message
 %%
 shiftingCosineCarrier = cos(2 * pi * shiftingFrequency * carrierTimeScale);
 
-NoisyRetrievedMessage = carrierHidden .* shiftingCosineCarrier;
+NoisyRetrievedMessage = 4 * carrierHidden .* shiftingCosineCarrier;
 
 %plot the fft of the noisy message
+figure(7)
 NoisyRetrievedMessageFft = fft(NoisyRetrievedMessage);
 plot(abs(NoisyRetrievedMessageFft))
 xlabel("k")
-ylabel("NoisyRetrievedMessage[k]")
+ylabel("abs(NoisyRetrievedMessageFft)")
 title("Noisy Retrieved Message in frequency domain")
 
+figure(8)
 NoisyRetrievedMessageFft = fft(NoisyRetrievedMessage);
 plot(carrierFftFrequencyScale, abs(NoisyRetrievedMessageFft))
 xlabel("Frequency(Hz)")
-ylabel("NoisyRetrievedMessage magnitude spectrum")
+ylabel("abs(NoisyRetrievedMessageFft)")
 title("Noisy Retrieved Message against frequency")
 %% 
 % Removing the noise in Frequency domain  to restore the original message 
@@ -111,6 +119,7 @@ retrievedMessageFft = NoisyRetrievedMessageFft;
 retrievedMessageFft(kStart: kEnd) = retrievedMessageFft(kStart: kEnd) * 0;
 
 retrievedMessage = ifft(retrievedMessageFft, 'symmetric');
+figure(9)
 plot(carrierFftFrequencyScale, abs(retrievedMessageFft))
 xlabel("Frequency(Hz)")
 ylabel("Spectral coefficients magnitude")
